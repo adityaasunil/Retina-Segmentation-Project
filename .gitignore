@@ -1,0 +1,18 @@
+# Ignore large data and cache files
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Data folders
+data/
+outputs/
+checkpoints/
+*.pth
+*.pt
+
+# Environment and IDE files
+.env
+.venv/
+.idea/
+.vscode/
