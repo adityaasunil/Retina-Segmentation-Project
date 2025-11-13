@@ -1,11 +1,16 @@
-import os 
+import os, sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+
 import cv2 
 import numpy as np 
 import torch as t 
 import torch.utils.data.dataset as dataset 
-from transforms import get_transforms
+from src.transforms import get_transforms
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 class RetinaVesselDataset(dataset.Dataset):
     def __init__(self,root,split,split_file,img_size=512):
@@ -51,17 +56,23 @@ class RetinaVesselDataset(dataset.Dataset):
         img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB) # converts BGR to RGB
         mask = cv2.imread(mask_path,0) # reads the mask in grayscale mode
 
-        mask = mask / 255.0 # scales the mask to [0,1]
-        mask  = np.clip(mask,0,1)
+        mask = ((mask.astype(np.float32))/255.0)# scales the mask to [0,1]
+        mask  = (mask>0.5).astype(np.float32) # binarize before any transforms
 
         transformed = self.tfs(image=img,mask=mask)
         img_tensor = transformed['image']
         mask_tensor = transformed['mask']
-            
-        if mask_tensor.ndim == 2:
-            mask_tensor = mask_tensor.unsqueeze(0)
 
-        return img_tensor, mask_tensor, fname
-    
+        if isinstance(mask_tensor,np.ndarray): # asking whether mask_tensor is a numpy array
+            mask_tensor = (mask_tensor>0.5).astype(np.float32) #normalizing values greater than 0.5 as 1, and less than that to 0, and storing them as a float
+            mask_tensor = t.from_numpy(mask_tensor) # converting to Pytorch tensor
+        else:
+            mask_tensor = (mask_tensor>0.5).float()
 
 
+        if mask_tensor.ndim == 2: #checks the number of dimensions in that array
+            mask_tensor = mask_tensor.unsqueeze(0) #since, pytorch requires 3 dimensions, we add a fake dimension at the 0th index of that vector
+        mask_tensor = mask_tensor.float()
+
+
+        return img_tensor, mask_tensor

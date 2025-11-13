@@ -20,3 +20,7 @@ def load_example(fname):
     npmask = tensortonumpy(mask_tensor)
     return npimg, npmask
 
+img,mask = load_example(2)
+plt.imshow(img)
+plt.imshow(mask,cmap='jet',alpha=0.5)
+plt.show()
